@@ -1,0 +1,145 @@
+# MindEase API - Requirements
+
+# Core FastAPI and dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+python-jose[cryptography]==3.5.0  
+passlib[bcrypt]==1.7.4
+bcrypt~=4.0,<4.1  
+python-dotenv==1.0.0
+
+# Database
+sqlalchemy[asyncio]==2.0.23
+asyncpg==0.29.0
+alembic==1.13.1
+psycopg2-binary==2.9.9
+
+# Vector database
+pgvector==0.2.4
+
+# Redis caching
+redis[hiredis]==5.0.1
+aioredis==2.0.1
+
+# HTTP client
+httpx==0.25.2
+aiohttp==3.9.1
+
+# Data processing
+pandas==2.1.4
+numpy==1.25.2
+pydantic==2.5.2
+pydantic-settings==2.1.0
+
+# Machine Learning / Embeddings
+sentence-transformers==2.2.2
+torch==2.1.2
+transformers==4.36.2
+scikit-learn==1.3.2
+huggingface-hub==0.19.4
+
+# RAG Learning Framework
+datasets==2.15.0
+peft==0.7.1
+trl==0.7.4
+accelerate==0.25.0
+bitsandbytes==0.41.3
+
+# Experiment tracking
+mlflow==2.8.1
+wandb==0.16.1
+
+# Text processing
+nltk==3.8.1
+spacy==3.7.2
+langdetect==1.0.9
+bleach==6.1.0
+
+# File processing
+openpyxl==3.1.2
+python-docx==1.1.0
+PyPDF2==3.0.1
+python-magic==0.4.27
+
+# Monitoring and logging
+psutil==5.9.6
+structlog==23.2.0
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+httpx==0.25.2
+factory-boy==3.3.0
+
+# Development tools
+black==23.11.0
+isort==5.12.0
+flake8==6.1.0
+mypy==1.7.1
+
+# Security
+cryptography==45.0.4  
+
+
+# Date/time handling
+python-dateutil==2.8.2
+
+# Environment and configuration
+pydantic-settings==2.1.0
+python-dotenv==1.0.0
+
+# API documentation
+fastapi[all]==0.104.1
+
+# Background tasks (optional)
+celery[redis]==5.5.3
+
+# Email (optional)
+fastapi-mail==1.4.1
+
+# File uploads
+aiofiles==23.2.1
+
+# Validation
+email-validator==2.1.0
+
+# JSON handling
+orjson==3.9.10
+
+# Timezone handling
+pytz==2023.3
+
+# Async utilities
+asyncio-mqtt==0.16.1
+
+# Health monitoring
+prometheus-client==0.19.0
+
+# Rate limiting
+slowapi==0.1.9
+
+# CORS and security
+python-multipart==0.0.6
+
+# Image processing (optional)
+Pillow==10.1.0
+
+# Data validation
+marshmallow==3.20.1
+
+# Serialization
+msgpack==1.0.7
+
+# Compression
+zstandard==0.22.0
+
+# Networking
+dnspython==2.4.2
+
+# Utilities
+click==8.1.7
+rich==13.7.0
+typer==0.9.0
+

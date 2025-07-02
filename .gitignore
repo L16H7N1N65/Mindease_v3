@@ -73,3 +73,4 @@ Dockerfile.*.bak
 *.dump
 *.db
 *.sqlite
+backend/mindease-api/.env_all

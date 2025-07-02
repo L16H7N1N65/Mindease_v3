@@ -1,0 +1,104 @@
+
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: mindease-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mindease}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mindease_password}
+      POSTGRES_DB: ${POSTGRES_DB:-mindease_db}
+      PGDATA: /data/postgres
+    volumes:
+      - postgres_data:/data/postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - mindease-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mindease"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Backend API Service
+  backend:
+    build:
+      context: ./backend/mindease-api
+      dockerfile: Dockerfile
+    container_name: mindease-backend
+    environment:
+      - DATABASE_URL=postgresql://mindease:mindease_password@postgres:5432/mindease_db
+      - SECRET_KEY=${SECRET_KEY:-your_secret_key_here}
+      - MISTRAL_SERVICE_URL=http://mistral-service:5000
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    networks:
+      - mindease-network
+    restart: unless-stopped
+
+  # Mistral LLM Service
+  mistral-service:
+    build:
+      context: ./backend/mistral-service
+      dockerfile: Dockerfile
+    container_name: mindease-mistral
+    environment:
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:-your_mistral_api_key}
+      - MODEL_NAME=${MODEL_NAME:-mistral-large-latest}
+    ports:
+      - "5000:5000"
+    networks:
+      - mindease-network
+    restart: unless-stopped
+
+  # Frontend Web Application
+  frontend:
+    build:
+      context: ./frontend/mindease-web
+      dockerfile: Dockerfile
+    container_name: mindease-frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+      - NEXT_PUBLIC_ENVIRONMENT=${ENVIRONMENT:-production}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - mindease-network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: mindease-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/mindease.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./frontend/mindease-web/public:/var/www/mindease/static
+      - ./nginx/error_pages:/var/www/mindease/error_pages
+    depends_on:
+      - frontend
+      - backend
+      - mistral-service
+    networks:
+      - mindease-network
+    restart: unless-stopped
+
+networks:
+  mindease-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

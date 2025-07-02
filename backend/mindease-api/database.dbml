@@ -1,0 +1,563 @@
+Table "vector_test" {
+  "id" int4 [pk, not null, increment]
+  "embedding" public.vector
+}
+
+Table "alembic_version" {
+  "version_num" varchar(32) [pk, not null]
+}
+
+Table "users" {
+  "id" int4 [pk, not null, increment]
+  "username" varchar(50) [unique, not null]
+  "email" varchar(100) [unique, not null]
+  "hashed_password" varchar(100) [not null]
+  "is_active" bool [not null]
+  "terms_accepted" bool [not null]
+  "terms_accepted_at" timestamp
+  "email_confirmed" bool [not null]
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+  "is_admin" bool [not null, default: false]
+  "organization_id" int4
+
+  Indexes {
+    organization_id [type: btree, name: "ix_users_organization_id"]
+  }
+}
+
+Table "roles" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(50) [unique, not null]
+  "description" varchar(200)
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+}
+
+Table "permissions" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(50) [unique, not null]
+  "description" varchar(200)
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+}
+
+Table "user_roles" {
+  "user_id" int4 [not null]
+  "role_id" int4 [not null]
+  "created_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    (user_id, role_id) [type: btree, name: "user_roles_pkey"]
+  }
+}
+
+Table "role_permissions" {
+  "role_id" int4 [not null]
+  "permission_id" int4 [not null]
+  "created_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    (role_id, permission_id) [type: btree, name: "role_permissions_pkey"]
+  }
+}
+
+Table "profiles" {
+  "id" int4 [pk, not null, increment]
+  "user_id" int4 [unique, not null]
+  "first_name" varchar(50)
+  "last_name" varchar(50)
+  "bio" text
+  "avatar_url" varchar(200)
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+}
+
+Table "preferences" {
+  "id" int4 [pk, not null, increment]
+  "user_id" int4 [unique, not null]
+  "theme" varchar(20)
+  "language" varchar(10)
+  "notifications_enabled" bool [not null]
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+}
+
+Table "mood_entries" {
+  "id" int4 [pk, not null, increment]
+  "user_id" int4 [not null]
+  "value" int4 [not null]
+  "notes" text
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    created_at [type: btree, name: "idx_mood_entries_created_at"]
+    user_id [type: btree, name: "idx_mood_entries_user_id"]
+  }
+}
+
+Table "mood_factors" {
+  "id" int4 [pk, not null, increment]
+  "entry_id" int4 [not null]
+  "name" varchar(50) [not null]
+  "impact" int4 [not null]
+  "created_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    entry_id [type: btree, name: "idx_mood_factors_entry_id"]
+    name [type: btree, name: "idx_mood_factors_name"]
+  }
+}
+
+Table "therapy_exercises" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(100) [not null]
+  "description" text
+  "instructions" text
+  "duration" int4
+  "difficulty" varchar(20)
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+}
+
+Table "therapy_sessions" {
+  "id" int4 [pk, not null, increment]
+  "user_id" int4 [not null]
+  "exercise_id" int4 [not null]
+  "duration" int4 [not null]
+  "notes" text
+  "completed" bool [not null]
+  "completed_at" timestamp
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+}
+
+Table "therapy_programs" {
+  "id" int4 [pk, not null, increment]
+  "user_id" int4 [not null]
+  "name" varchar(100) [not null]
+  "description" text
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+}
+
+Table "program_exercises" {
+  "program_id" int4 [not null]
+  "exercise_id" int4 [not null]
+  "order" int4 [not null]
+  "created_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    (program_id, exercise_id) [type: btree, name: "program_exercises_pkey"]
+  }
+}
+
+Table "social_posts" {
+  "id" int4 [pk, not null, increment]
+  "user_id" int4 [not null]
+  "content" text [not null]
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    created_at [type: btree, name: "idx_social_posts_created_at"]
+    user_id [type: btree, name: "idx_social_posts_user_id"]
+  }
+}
+
+Table "comments" {
+  "id" int4 [pk, not null, increment]
+  "post_id" int4 [not null]
+  "user_id" int4 [not null]
+  "content" text [not null]
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    post_id [type: btree, name: "idx_comments_post_id"]
+    user_id [type: btree, name: "idx_comments_user_id"]
+  }
+}
+
+Table "likes" {
+  "id" int4 [pk, not null, increment]
+  "post_id" int4 [not null]
+  "user_id" int4 [not null]
+  "created_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    (post_id, user_id) [type: btree, name: "uq_likes_post_user"]
+    post_id [type: btree, name: "idx_likes_post_id"]
+    user_id [type: btree, name: "idx_likes_user_id"]
+  }
+}
+
+Table "tags" {
+  "id" int4 [pk, not null, increment]
+  "post_id" int4 [not null]
+  "name" varchar(50) [not null]
+  "created_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    name [type: btree, name: "idx_tags_name"]
+    post_id [type: btree, name: "idx_tags_post_id"]
+  }
+}
+
+Table "organizations" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(100) [not null]
+  "description" text
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+}
+
+Table "members" {
+  "id" int4 [pk, not null, increment]
+  "organization_id" int4 [not null]
+  "user_id" int4 [not null]
+  "role" varchar(50) [not null]
+  "is_admin" bool [not null]
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    (organization_id, user_id) [type: btree, name: "uq_members_org_user"]
+    organization_id [type: btree, name: "idx_members_organization_id"]
+    user_id [type: btree, name: "idx_members_user_id"]
+  }
+}
+
+Table "api_keys" {
+  "id" int4 [pk, not null, increment]
+  "organization_id" int4 [not null]
+  "name" varchar(100) [not null]
+  "key_hash" varchar(100) [not null]
+  "is_active" bool [not null]
+  "expires_at" timestamp
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    key_hash [type: btree, name: "idx_api_keys_key_hash"]
+    organization_id [type: btree, name: "idx_api_keys_organization_id"]
+  }
+}
+
+Table "conversations" {
+  "id" varchar [pk, not null]
+  "user_id" int4 [not null]
+  "title" varchar(255)
+  "language" varchar(10) [not null, default: 'en']
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    user_id [type: btree, name: "ix_conversations_user_id"]
+  }
+}
+
+Table "conversation_messages" {
+  "id" int4 [pk, not null, increment]
+  "conversation_id" varchar [not null]
+  "user_id" int4 [not null]
+  "role" varchar(20) [not null]
+  "content" text [not null]
+  "sources" json
+  "user_context" json
+  "crisis_detected" bool [not null, default: false]
+  "language" varchar(10) [not null, default: 'en']
+  "created_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    conversation_id [type: btree, name: "ix_conversation_messages_conversation_id"]
+    user_id [type: btree, name: "ix_conversation_messages_user_id"]
+  }
+}
+
+Table "chat_analytics" {
+  "id" int4 [pk, not null, increment]
+  "user_id" int4 [not null]
+  "date" timestamp [not null, default: `now()`]
+  "total_messages" int4 [not null, default: 0]
+  "total_conversations" int4 [not null, default: 0]
+  "crisis_events" int4 [not null, default: 0]
+  "avg_response_time" float8
+  "most_used_categories" json
+  "language_usage" json
+
+  Indexes {
+    date [type: btree, name: "ix_chat_analytics_date"]
+    user_id [type: btree, name: "ix_chat_analytics_user_id"]
+  }
+}
+
+Table "chat_feedback" {
+  "id" int4 [pk, not null, increment]
+  "message_id" int4 [not null]
+  "user_id" int4 [not null]
+  "rating" int4 [not null]
+  "feedback_text" text
+  "helpful_sources" json
+  "created_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    message_id [type: btree, name: "ix_chat_feedback_message_id"]
+    user_id [type: btree, name: "ix_chat_feedback_user_id"]
+  }
+}
+
+Table "chat_settings" {
+  "id" int4 [pk, not null, increment]
+  "user_id" int4 [unique, not null]
+  "language" varchar(10) [not null, default: 'en']
+  "include_mood_context" bool [not null, default: true]
+  "include_therapy_context" bool [not null, default: true]
+  "crisis_alerts" bool [not null, default: true]
+  "conversation_memory" bool [not null, default: true]
+  "max_conversation_history" int4 [not null, default: 10]
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+}
+
+Table "documents" {
+  "id" int4 [pk, not null, increment]
+  "title" varchar(255) [not null]
+  "content" text [not null]
+  "category" varchar(100)
+  "source" varchar(255)
+  "doc_metadata" json
+  "organization_id" int4
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    category [type: btree, name: "ix_documents_category"]
+    organization_id [type: btree, name: "ix_documents_organization_id"]
+    title [type: btree, name: "ix_documents_title"]
+  }
+}
+
+Table "document_embeddings" {
+  "id" int4 [pk, not null, increment]
+  "document_id" int4 [not null]
+  "chunk_index" int4 [not null, default: 0]
+  "chunk_text" text [not null]
+  "embedding" "float8[]" [not null]
+  "embedding_model" varchar(100) [not null, default: 'all-MiniLM-L6-v2']
+  "created_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    chunk_index [type: btree, name: "ix_document_embeddings_chunk_index"]
+    document_id [type: btree, name: "ix_document_embeddings_document_id"]
+  }
+}
+
+Table "rag_feedback" {
+  "id" varchar [pk, not null]
+  "conversation_id" varchar [not null]
+  "message_id" int4 [not null]
+  "user_id" int4 [not null]
+  "organization_id" int4
+  "relevance_rating" int4
+  "helpfulness_rating" int4
+  "accuracy_rating" int4
+  "clarity_rating" int4
+  "safety_rating" int4
+  "overall_rating" float8
+  "feedback_text" text
+  "improvement_suggestions" text
+  "query_intent" varchar(100)
+  "emotional_state" varchar(50)
+  "crisis_level" varchar(20)
+  "safety_concerns" bool
+  "response_time_ms" int4
+  "documents_retrieved" int4
+  "retrieval_method" varchar(50)
+  "model_version" varchar(50)
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+
+  Indexes {
+    created_at [type: btree, name: "idx_rag_feedback_created_at"]
+    organization_id [type: btree, name: "idx_rag_feedback_organization_id"]
+    overall_rating [type: btree, name: "idx_rag_feedback_overall_rating"]
+    query_intent [type: btree, name: "idx_rag_feedback_query_intent"]
+    safety_concerns [type: btree, name: "idx_rag_feedback_safety_concerns"]
+    user_id [type: btree, name: "idx_rag_feedback_user_id"]
+  }
+}
+
+Table "feedback_analytics" {
+  "id" varchar [pk, not null]
+  "organization_id" int4
+  "date" date [not null]
+  "total_feedback" int4 [not null]
+  "average_rating" float8
+  "safety_concern_count" int4 [not null]
+  "improvement_suggestion_count" int4 [not null]
+  "rating_distribution" jsonb
+  "intent_performance" jsonb
+  "emotional_state_performance" jsonb
+  "rating_trend" float8
+  "safety_trend" float8
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (organization_id, date) [type: btree, name: "uq_feedback_analytics_org_date"]
+    date [type: btree, name: "idx_feedback_analytics_date"]
+    (organization_id, date) [type: btree, name: "idx_feedback_analytics_organization_date"]
+  }
+}
+
+Table "feedback_training_data" {
+  "id" varchar [pk, not null]
+  "feedback_id" varchar [not null]
+  "organization_id" int4
+  "query_text" text [not null]
+  "response_text" text [not null]
+  "retrieved_documents" jsonb
+  "context_metadata" jsonb
+  "feedback_score" float8 [not null]
+  "safety_score" float8 [not null]
+  "relevance_score" float8 [not null]
+  "improvement_suggestions" text
+  "data_quality_score" float8
+  "is_training_ready" bool
+  "training_split" varchar(20)
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+
+  Indexes {
+    organization_id [type: btree, name: "idx_feedback_training_data_organization"]
+    training_split [type: btree, name: "idx_feedback_training_data_split"]
+    is_training_ready [type: btree, name: "idx_feedback_training_data_training_ready"]
+  }
+}
+
+Table "response_improvements" {
+  "id" varchar [pk, not null]
+  "organization_id" int4
+  "created_by" int4 [not null]
+  "improvement_type" varchar(50) [not null]
+  "priority" varchar(20) [not null]
+  "status" varchar(20) [not null]
+  "title" varchar(200) [not null]
+  "description" text [not null]
+  "feedback_analysis" jsonb
+  "implementation_plan" text
+  "implementation_notes" text
+  "completion_date" timestamptz
+  "before_metrics" jsonb
+  "after_metrics" jsonb
+  "impact_score" float8
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+
+  Indexes {
+    organization_id [type: btree, name: "idx_response_improvements_organization"]
+    priority [type: btree, name: "idx_response_improvements_priority"]
+    status [type: btree, name: "idx_response_improvements_status"]
+    improvement_type [type: btree, name: "idx_response_improvements_type"]
+  }
+}
+
+Table "document_metadata" {
+  "id" int4 [pk, not null, increment]
+  "document_id" int4 [not null]
+  "key" varchar(100) [not null]
+  "value" varchar(255) [not null]
+  "created_at" timestamp [not null]
+  "updated_at" timestamp [not null]
+
+  Indexes {
+    id [type: btree, name: "ix_document_metadata_id"]
+    key [type: btree, name: "ix_document_metadata_key"]
+  }
+}
+
+Ref "api_keys_organization_id_fkey":"organizations"."id" < "api_keys"."organization_id" [delete: cascade]
+
+Ref "chat_analytics_user_id_fkey":"users"."id" < "chat_analytics"."user_id"
+
+Ref "chat_feedback_message_id_fkey":"conversation_messages"."id" < "chat_feedback"."message_id"
+
+Ref "chat_feedback_user_id_fkey":"users"."id" < "chat_feedback"."user_id"
+
+Ref "chat_settings_user_id_fkey":"users"."id" < "chat_settings"."user_id"
+
+Ref "comments_post_id_fkey":"social_posts"."id" < "comments"."post_id" [delete: cascade]
+
+Ref "comments_user_id_fkey":"users"."id" < "comments"."user_id" [delete: cascade]
+
+Ref "conversation_messages_conversation_id_fkey":"conversations"."id" < "conversation_messages"."conversation_id"
+
+Ref "conversation_messages_user_id_fkey":"users"."id" < "conversation_messages"."user_id"
+
+Ref "conversations_user_id_fkey":"users"."id" < "conversations"."user_id"
+
+Ref "document_embeddings_document_id_fkey":"documents"."id" < "document_embeddings"."document_id" [delete: cascade]
+
+Ref "document_metadata_document_id_fkey":"documents"."id" < "document_metadata"."document_id"
+
+Ref "documents_organization_id_fkey":"organizations"."id" < "documents"."organization_id"
+
+Ref "feedback_analytics_organization_id_fkey":"organizations"."id" < "feedback_analytics"."organization_id" [delete: cascade]
+
+Ref "feedback_training_data_feedback_id_fkey":"rag_feedback"."id" < "feedback_training_data"."feedback_id" [delete: cascade]
+
+Ref "feedback_training_data_organization_id_fkey":"organizations"."id" < "feedback_training_data"."organization_id" [delete: cascade]
+
+Ref "likes_post_id_fkey":"social_posts"."id" < "likes"."post_id" [delete: cascade]
+
+Ref "likes_user_id_fkey":"users"."id" < "likes"."user_id" [delete: cascade]
+
+Ref "members_organization_id_fkey":"organizations"."id" < "members"."organization_id" [delete: cascade]
+
+Ref "members_user_id_fkey":"users"."id" < "members"."user_id" [delete: cascade]
+
+Ref "mood_entries_user_id_fkey":"users"."id" < "mood_entries"."user_id" [delete: cascade]
+
+Ref "mood_factors_entry_id_fkey":"mood_entries"."id" < "mood_factors"."entry_id" [delete: cascade]
+
+Ref "preferences_user_id_fkey":"users"."id" < "preferences"."user_id" [delete: cascade]
+
+Ref "profiles_user_id_fkey":"users"."id" < "profiles"."user_id" [delete: cascade]
+
+Ref "program_exercises_exercise_id_fkey":"therapy_exercises"."id" < "program_exercises"."exercise_id" [delete: cascade]
+
+Ref "program_exercises_program_id_fkey":"therapy_programs"."id" < "program_exercises"."program_id" [delete: cascade]
+
+Ref "rag_feedback_conversation_id_fkey":"conversations"."id" < "rag_feedback"."conversation_id" [delete: cascade]
+
+Ref "rag_feedback_message_id_fkey":"conversation_messages"."id" < "rag_feedback"."message_id" [delete: cascade]
+
+Ref "rag_feedback_organization_id_fkey":"organizations"."id" < "rag_feedback"."organization_id" [delete: cascade]
+
+Ref "rag_feedback_user_id_fkey":"users"."id" < "rag_feedback"."user_id" [delete: cascade]
+
+Ref "response_improvements_created_by_fkey":"users"."id" < "response_improvements"."created_by" [delete: cascade]
+
+Ref "response_improvements_organization_id_fkey":"organizations"."id" < "response_improvements"."organization_id" [delete: cascade]
+
+Ref "role_permissions_permission_id_fkey":"permissions"."id" < "role_permissions"."permission_id" [delete: cascade]
+
+Ref "role_permissions_role_id_fkey":"roles"."id" < "role_permissions"."role_id" [delete: cascade]
+
+Ref "social_posts_user_id_fkey":"users"."id" < "social_posts"."user_id" [delete: cascade]
+
+Ref "tags_post_id_fkey":"social_posts"."id" < "tags"."post_id" [delete: cascade]
+
+Ref "therapy_programs_user_id_fkey":"users"."id" < "therapy_programs"."user_id" [delete: cascade]
+
+Ref "therapy_sessions_exercise_id_fkey":"therapy_exercises"."id" < "therapy_sessions"."exercise_id" [delete: cascade]
+
+Ref "therapy_sessions_user_id_fkey":"users"."id" < "therapy_sessions"."user_id" [delete: cascade]
+
+Ref "user_roles_role_id_fkey":"roles"."id" < "user_roles"."role_id" [delete: cascade]
+
+Ref "user_roles_user_id_fkey":"users"."id" < "user_roles"."user_id" [delete: cascade]
+
+Ref "fk_users_organization_id":"organizations"."id" < "users"."organization_id"
