@@ -1,5 +1,3 @@
-
-
 services:
   # PostgreSQL Database
   postgres:
@@ -23,6 +21,23 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: mindease-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - mindease-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   # Backend API Service
   backend:
     build:
@@ -31,16 +46,27 @@ services:
     container_name: mindease-backend
     environment:
       - DATABASE_URL=postgresql://mindease:mindease_password@postgres:5432/mindease_db
+      - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=${SECRET_KEY:-your_secret_key_here}
       - MISTRAL_SERVICE_URL=http://mistral-service:5000
       - ENVIRONMENT=${ENVIRONMENT:-production}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,https://localhost:3000}
+      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "8000:8000"
     networks:
       - mindease-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
 
   # Mistral LLM Service
@@ -52,10 +78,16 @@ services:
     environment:
       - MISTRAL_API_KEY=${MISTRAL_API_KEY:-your_mistral_api_key}
       - MODEL_NAME=${MODEL_NAME:-mistral-large-latest}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     ports:
       - "5000:5000"
     networks:
       - mindease-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
 
   # Frontend Web Application
@@ -67,12 +99,79 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://backend:8000
       - NEXT_PUBLIC_ENVIRONMENT=${ENVIRONMENT:-production}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-your_nextauth_secret}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
     ports:
       - "3000:3000"
     depends_on:
       - backend
     networks:
       - mindease-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # SonarQube for Code Quality
+  sonarqube:
+    image: sonarqube:10.3-community
+    container_name: mindease-sonarqube
+    environment:
+      - SONAR_JDBC_URL=jdbc:postgresql://postgres:5432/sonarqube_db
+      - SONAR_JDBC_USERNAME=${POSTGRES_USER:-mindease}
+      - SONAR_JDBC_PASSWORD=${POSTGRES_PASSWORD:-mindease_password}
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+    networks:
+      - mindease-network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  # Prometheus for Metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mindease-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - mindease-network
+    restart: unless-stopped
+
+  # Grafana for Dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mindease-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - mindease-network
+    depends_on:
+      - prometheus
     restart: unless-stopped
 
   # Nginx Reverse Proxy
@@ -102,3 +201,10 @@ networks:
 
 volumes:
   postgres_data:
+  redis_data:
+  sonarqube_data:
+  sonarqube_logs:
+  sonarqube_extensions:
+  prometheus_data:
+  grafana_data:
+
