@@ -2,7 +2,7 @@ FROM node:20-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-WORKDIR /app
+WORKDIR .
 
 # Copy package.json and package-lock.json
 COPY package.json package-lock.json ./
@@ -15,7 +15,7 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
+RUN npm install
 # Build the Next.js application
 RUN npm run build
 
@@ -24,28 +24,36 @@ FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV production
+# Build the React Native application
 
-# Create a non-root user and group
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
 
-# Copy necessary files from builder
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+# Expose port for development server
+EXPOSE 8080
 
-# Set proper ownership
-RUN chown -R nextjs:nodejs /app
+# Start the Metro bundler
+CMD ["npm", "start"]
 
-# Switch to non-root user
-USER nextjs
+# # Create a non-root user and group
+# RUN addgroup --system --gid 1001 nodejs
+# RUN adduser --system --uid 1001 nextjs
 
-# Expose port
-EXPOSE 3000
+# # Copy necessary files from builder
+# COPY --from=builder /app/public ./public
+# COPY --from=builder /app/.next/standalone ./
+# COPY --from=builder /app/.next/static ./.next/static
 
-# Set environment variables
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+# # Set proper ownership
+# RUN chown -R nextjs:nodejs /app
 
-# Start the application
-CMD ["node", "server.js"]
+# # Switch to non-root user
+# USER nextjs
+
+# # Expose port
+# EXPOSE 3000
+
+# # Set environment variables
+# ENV PORT 3000
+# ENV HOSTNAME "0.0.0.0"
+
+# # Start the application
+# CMD ["node", "server.js"]
