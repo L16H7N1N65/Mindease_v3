@@ -34,7 +34,7 @@ pydantic-settings==2.1.0
 
 # Machine Learning / Embeddings
 sentence-transformers==2.2.2
-torch==2.1.2
+torch==2.7.1
 transformers==4.36.2
 scikit-learn==1.3.2
 huggingface-hub==0.19.4
